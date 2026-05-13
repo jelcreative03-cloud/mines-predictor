@@ -40,6 +40,7 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminSecret, setAdminSecret] = useState('');
   const [generatedVoucher, setGeneratedVoucher] = useState('');
+  const [totalVouchers, setTotalVouchers] = useState(0);
 
   // Fetch history on mount
   useEffect(() => {
@@ -172,6 +173,19 @@ function App() {
     }
   };
 
+  const fetchVoucherCount = async () => {
+    try {
+      const { count, error } = await supabase
+        .from('vouchers')
+        .select('*', { count: 'exact', head: true });
+      if (!error) {
+        setTotalVouchers(count || 0);
+      }
+    } catch (err) {
+      console.error('Failed to fetch voucher count', err);
+    }
+  };
+
   const generateVoucher = async () => {
     // Basic local security check (In a real production app, use Supabase RLS or Edge Functions)
     if (adminSecret !== 'Hazard442..123') {
@@ -189,6 +203,7 @@ function App() {
         
       if (error) throw error;
       setGeneratedVoucher(code);
+      fetchVoucherCount(); // Update the count when a new one is made
     } catch (err) {
       console.error('Failed to generate voucher', err);
       alert('Database error connecting to Supabase');
@@ -205,6 +220,7 @@ function App() {
       if (secret) {
         setIsAdmin(true);
         setAdminSecret(secret);
+        fetchVoucherCount(); // Fetch count when admin logs in
       }
     }
   };
@@ -354,9 +370,15 @@ function App() {
           
           {isAdmin && (
             <div className="glass panel mt-4 flex flex-col">
-              <div className="panel-title text-accent-predict mb-2">
-                <Settings size={18} /> ADMIN VOUCHER GEN
+              <div className="panel-title text-accent-predict mb-2 flex justify-between items-center">
+                <span><Settings size={18} className="inline mr-2"/> ADMIN VOUCHER GEN</span>
               </div>
+              
+              <div className="flex justify-between items-center mb-4 px-2 py-2 bg-black/30 rounded border border-white/5">
+                <span className="text-xs text-secondary">Total Generated:</span>
+                <span className="text-sm font-bold text-accent-predict">{totalVouchers}</span>
+              </div>
+
               <button 
                 onClick={generateVoucher}
                 className="btn py-2 text-sm bg-white/10 hover:bg-white/20 transition-colors w-full rounded"
@@ -364,9 +386,24 @@ function App() {
                 CREATE NEW VOUCHER
               </button>
               {generatedVoucher && (
-                <div className="mt-3 p-3 bg-black/50 rounded text-center border border-accent-predict/30">
+                <div className="mt-3 p-3 bg-black/50 rounded text-center border border-accent-predict/30 flex flex-col items-center">
                   <div className="text-xs text-secondary mb-1">Generated Code:</div>
-                  <div className="text-xl font-mono text-accent-predict tracking-widest">{generatedVoucher}</div>
+                  <div className="text-xl font-mono text-accent-predict tracking-widest mb-3">{generatedVoucher}</div>
+                  <button 
+                    onClick={() => {
+                      const element = document.createElement("a");
+                      const file = new Blob([`Mines Predictor AI - VIP Voucher\n--------------------------------\nCode: ${generatedVoucher}\n\nUse this code to predict your next round!`], {type: 'text/plain'});
+                      element.href = URL.createObjectURL(file);
+                      element.download = `Voucher-${generatedVoucher}.txt`;
+                      document.body.appendChild(element);
+                      element.click();
+                      document.body.removeChild(element);
+                    }}
+                    className="text-xs bg-white/10 hover:bg-white/20 py-2 px-4 rounded transition-colors flex items-center gap-2"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download Voucher
+                  </button>
                 </div>
               )}
             </div>
