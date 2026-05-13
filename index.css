@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  --color-accent-safe: #00ff88;
+  --color-accent-danger: #ff4444;
+  --color-accent-predict: #00d4ff;
+  --color-text-secondary: #94a3b8;
+  --color-surface-hover: #242731;
+  --color-orange-400: #fb923c;
+}
+
+:root {
+  --bg-color: #0a0b0d;
+  --surface-color: #1a1c23;
+  --surface-hover: #242731;
+  --accent-safe: #00ff88;
+  --accent-danger: #ff4444;
+  --accent-predict: #00d4ff;
+  --text-primary: #ffffff;
+  --text-secondary: #94a3b8;
+  --glow-safe: 0 0 15px rgba(0, 255, 136, 0.4);
+  --glow-danger: 0 0 15px rgba(255, 68, 68, 0.4);
+  --glow-predict: 0 0 15px rgba(0, 212, 255, 0.4);
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  overflow-x: hidden;
+}
+
+.glass {
+  background: rgba(26, 28, 35, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+}
+
+.glowing-text {
+  text-shadow: 0 0 10px currentColor;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: var(--accent-predict);
+  color: #000;
+}
+
+.btn-primary:hover {
+  box-shadow: var(--glow-predict);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--surface-color);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-hover);
+}
