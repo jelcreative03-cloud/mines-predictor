@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { createClient } from '@supabase/supabase-js';
+import { usePaystackPayment } from 'react-paystack';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -41,11 +42,45 @@ function App() {
   const [adminSecret, setAdminSecret] = useState('');
   const [generatedVoucher, setGeneratedVoucher] = useState('');
   const [totalVouchers, setTotalVouchers] = useState(0);
+  
+  // Paystack state
+  const [buyerEmail, setBuyerEmail] = useState('');
+  const [purchasedVoucher, setPurchasedVoucher] = useState('');
 
   // Fetch history on mount
   useEffect(() => {
     fetchHistory();
   }, []);
+
+  // Paystack Configuration
+  const paystackConfig = {
+    reference: (new Date()).getTime().toString(),
+    email: buyerEmail || 'guest@predictacord.com',
+    amount: 2000, // Amount is in lowest denomination (20.00)
+    publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_live_4a40bfb9b3e57c0919bef6958579ae74829ce7be',
+  };
+  
+  const initializePayment = usePaystackPayment(paystackConfig);
+
+  const onPaymentSuccess = async (reference) => {
+    try {
+      const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+      const { error } = await supabase
+        .from('vouchers')
+        .insert([{ code }]);
+        
+      if (error) throw error;
+      setPurchasedVoucher(code);
+      setVoucher(code); // Automatically apply it for them!
+    } catch (err) {
+      console.error('Failed to generate purchased voucher', err);
+      alert('Payment successful, but error generating voucher. Contact support with reference: ' + reference.reference);
+    }
+  };
+
+  const onPaymentClose = () => {
+    // Payment window closed
+  };
 
   const fetchHistory = async () => {
     try {
@@ -338,11 +373,39 @@ function App() {
             <button 
               className={`predict-btn ${isSimulationRunning ? 'analyzing' : 'ready'}`}
               onClick={predictNextRound}
-              disabled={isSimulationRunning}
+              disabled={isSimulationRunning || !voucher.trim()}
             >
               {isSimulationRunning ? <RefreshCw className="animate-spin mr-2" /> : <Zap className="mr-2" />}
               {isSimulationRunning ? 'ANALYZING PATTERNS...' : 'PREDICT NEXT ROUND'}
             </button>
+
+            <div className="mt-6 pt-4 border-t border-white/10">
+              <div className="text-xs text-secondary mb-2 text-center text-accent-predict/80">NO VOUCHER? BUY ONE NOW</div>
+              <input
+                type="email"
+                placeholder="ENTER YOUR EMAIL"
+                className="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white mb-3 text-sm text-center focus:outline-none focus:border-accent-predict"
+                value={buyerEmail}
+                onChange={(e) => setBuyerEmail(e.target.value)}
+              />
+              <button 
+                onClick={() => {
+                  if (!buyerEmail) { alert('Please enter your email to receive the receipt'); return; }
+                  initializePayment(onPaymentSuccess, onPaymentClose);
+                }}
+                className="w-full bg-green-500/20 text-green-400 border border-green-500/50 py-2.5 rounded text-sm hover:bg-green-500/30 transition-colors shadow-[0_0_15px_rgba(34,197,94,0.2)] font-bold tracking-wider"
+              >
+                BUY ACCESS (20.00)
+              </button>
+              
+              {purchasedVoucher && (
+                <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded text-center">
+                  <div className="text-[10px] text-green-400 mb-1">PAYMENT SUCCESSFUL!</div>
+                  <div className="text-sm font-mono tracking-widest text-white">{purchasedVoucher}</div>
+                  <div className="text-[10px] text-gray-400 mt-1">Code automatically applied to box above</div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="glass panel flex-1 overflow-hidden flex flex-col">
