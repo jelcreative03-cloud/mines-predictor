@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 
 import { createClient } from '@supabase/supabase-js';
-import { usePaystackPayment } from 'react-paystack';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -43,43 +42,22 @@ function App() {
   const [generatedVoucher, setGeneratedVoucher] = useState('');
   const [totalVouchers, setTotalVouchers] = useState(0);
   
-  // Paystack state
+  // WhatsApp / Manual state
   const [buyerEmail, setBuyerEmail] = useState('');
-  const [purchasedVoucher, setPurchasedVoucher] = useState('');
+  const WHATSAPP_NUMBER = '233204104033'; // Updated with your number!
 
   // Fetch history on mount
   useEffect(() => {
     fetchHistory();
   }, []);
 
-  // Paystack Configuration
-  const paystackConfig = {
-    reference: (new Date()).getTime().toString(),
-    email: buyerEmail || 'guest@predictacord.com',
-    amount: 2000, // Amount is in lowest denomination (20.00)
-    publicKey: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_live_4a40bfb9b3e57c0919bef6958579ae74829ce7be',
-  };
-  
-  const initializePayment = usePaystackPayment(paystackConfig);
-
-  const onPaymentSuccess = async (reference) => {
-    try {
-      const code = Math.random().toString(36).substring(2, 10).toUpperCase();
-      const { error } = await supabase
-        .from('vouchers')
-        .insert([{ code }]);
-        
-      if (error) throw error;
-      setPurchasedVoucher(code);
-      setVoucher(code); // Automatically apply it for them!
-    } catch (err) {
-      console.error('Failed to generate purchased voucher', err);
-      alert('Payment successful, but error generating voucher. Contact support with reference: ' + reference.reference);
+  const handleWhatsAppBuy = () => {
+    if (!buyerEmail.trim()) {
+      alert("Please enter your email first so we can track your order.");
+      return;
     }
-  };
-
-  const onPaymentClose = () => {
-    // Payment window closed
+    const message = encodeURIComponent(`Hello! I want to purchase a Mines Predictor VIP Voucher for 50 GHS.\n\nMy Email: ${buyerEmail}`);
+    window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${message}`, '_blank');
   };
 
   const fetchHistory = async () => {
@@ -380,31 +358,23 @@ function App() {
             </button>
 
             <div className="mt-6 pt-4 border-t border-white/10">
-              <div className="text-xs text-secondary mb-2 text-center text-accent-predict/80">NO VOUCHER? BUY ONE NOW</div>
-              <input
-                type="email"
-                placeholder="ENTER YOUR EMAIL"
-                className="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white mb-3 text-sm text-center focus:outline-none focus:border-accent-predict"
-                value={buyerEmail}
-                onChange={(e) => setBuyerEmail(e.target.value)}
-              />
-              <button 
-                onClick={() => {
-                  if (!buyerEmail) { alert('Please enter your email to receive the receipt'); return; }
-                  initializePayment(onPaymentSuccess, onPaymentClose);
-                }}
-                className="w-full bg-green-500/20 text-green-400 border border-green-500/50 py-2.5 rounded text-sm hover:bg-green-500/30 transition-colors shadow-[0_0_15px_rgba(34,197,94,0.2)] font-bold tracking-wider"
-              >
-                BUY ACCESS (20.00)
-              </button>
-              
-              {purchasedVoucher && (
-                <div className="mt-3 p-3 bg-green-500/10 border border-green-500/30 rounded text-center">
-                  <div className="text-[10px] text-green-400 mb-1">PAYMENT SUCCESSFUL!</div>
-                  <div className="text-sm font-mono tracking-widest text-white">{purchasedVoucher}</div>
-                  <div className="text-[10px] text-gray-400 mt-1">Code automatically applied to box above</div>
-                </div>
-              )}
+              <div className="text-[10px] text-secondary mb-2 text-center text-accent-predict/80 uppercase tracking-widest">Premium Access</div>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="email"
+                  placeholder="YOUR EMAIL"
+                  className="w-full bg-black/40 border border-white/10 rounded px-4 py-2 text-white text-xs text-center focus:outline-none focus:border-accent-predict transition-all"
+                  value={buyerEmail}
+                  onChange={(e) => setBuyerEmail(e.target.value)}
+                />
+                <button 
+                  onClick={handleWhatsAppBuy}
+                  className="w-full bg-[#25D366]/10 text-[#25D366] border border-[#25D366]/40 py-2.5 rounded text-xs hover:bg-[#25D366]/20 transition-all flex items-center justify-center gap-2 font-bold"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L0 24l6.335-1.662c1.72.94 3.675 1.439 5.662 1.439h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  BUY VOUCHER (50 GHS)
+                </button>
+              </div>
             </div>
           </div>
 
@@ -452,21 +422,31 @@ function App() {
                 <div className="mt-3 p-3 bg-black/50 rounded text-center border border-accent-predict/30 flex flex-col items-center">
                   <div className="text-xs text-secondary mb-1">Generated Code:</div>
                   <div className="text-xl font-mono text-accent-predict tracking-widest mb-3">{generatedVoucher}</div>
-                  <button 
-                    onClick={() => {
-                      const element = document.createElement("a");
-                      const file = new Blob([`Mines Predictor AI - VIP Voucher\n--------------------------------\nCode: ${generatedVoucher}\n\nUse this code to predict your next round!`], {type: 'text/plain'});
-                      element.href = URL.createObjectURL(file);
-                      element.download = `Voucher-${generatedVoucher}.txt`;
-                      document.body.appendChild(element);
-                      element.click();
-                      document.body.removeChild(element);
-                    }}
-                    className="text-xs bg-white/10 hover:bg-white/20 py-2 px-4 rounded transition-colors flex items-center gap-2"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                    Download Voucher
-                  </button>
+                  <div className="flex gap-2 w-full">
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(generatedVoucher);
+                        alert("Code copied to clipboard!");
+                      }}
+                      className="flex-1 text-[10px] bg-accent-predict/10 text-accent-predict border border-accent-predict/30 py-2 rounded hover:bg-accent-predict/20 transition-all font-bold"
+                    >
+                      COPY CODE
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const element = document.createElement("a");
+                        const file = new Blob([`Mines Predictor AI - VIP Voucher\n--------------------------------\nCode: ${generatedVoucher}\n\nUse this code to predict your next round!`], {type: 'text/plain'});
+                        element.href = URL.createObjectURL(file);
+                        element.download = `Voucher-${generatedVoucher}.txt`;
+                        document.body.appendChild(element);
+                        element.click();
+                        document.body.removeChild(element);
+                      }}
+                      className="flex-1 text-[10px] bg-white/5 text-white border border-white/10 py-2 rounded hover:bg-white/10 transition-all font-bold"
+                    >
+                      DOWNLOAD
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
